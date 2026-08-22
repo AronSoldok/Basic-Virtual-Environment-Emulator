@@ -195,8 +195,16 @@ public partial class WebWindow : Window
         }
     }
 
+    private bool IsLogUiReady =>
+        SearchBox is not null && KindFilter is not null && CountText is not null && LogList is not null;
+
     private bool MatchesFilter(RequestLogEntry entry)
     {
+        if (!IsLogUiReady)
+        {
+            return true;
+        }
+
         var kind = (KindFilter.SelectedItem as ComboBoxItem)?.Tag as string ?? "all";
         if (kind == "allow" && !entry.Allowed)
         {
@@ -227,6 +235,11 @@ public partial class WebWindow : Window
 
     private void ApplyFilter(bool keepSelection = false)
     {
+        if (!IsLogUiReady)
+        {
+            return;
+        }
+
         var selected = keepSelection ? LogList.SelectedItem as RequestLogEntry : null;
         _visible.Clear();
         foreach (var entry in _all)
@@ -244,9 +257,21 @@ public partial class WebWindow : Window
         }
     }
 
-    private void FilterChanged(object sender, SelectionChangedEventArgs e) => ApplyFilter();
+    private void FilterChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (IsLogUiReady)
+        {
+            ApplyFilter();
+        }
+    }
 
-    private void SearchChanged(object sender, TextChangedEventArgs e) => ApplyFilter();
+    private void SearchChanged(object sender, TextChangedEventArgs e)
+    {
+        if (IsLogUiReady)
+        {
+            ApplyFilter();
+        }
+    }
 
     private void ToggleLog_Click(object sender, RoutedEventArgs e)
     {

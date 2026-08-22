@@ -22,7 +22,10 @@ public partial class App : Application
             .FirstOrDefault(p => string.Equals(p.Id, profileId, StringComparison.OrdinalIgnoreCase));
         if (profile is null)
         {
-            MessageBox.Show($"Профиль «{profileId}» не найден.", "ClosedEnv", MessageBoxButton.OK, MessageBoxImage.Warning);
+            var message = string.Equals(profileId, "max-web", StringComparison.OrdinalIgnoreCase)
+                ? "Профиль MAX Web не загрузился. Нужен вшитый max-web. Пересоберите exe через scripts\\publish.ps1."
+                : $"Профиль «{profileId}» не найден.";
+            MessageBox.Show(message, "ClosedEnv", MessageBoxButton.OK, MessageBoxImage.Warning);
             Shutdown();
             return;
         }
@@ -48,7 +51,11 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "ClosedEnv", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(
+                "Не удалось открыть веб-MAX:\n" + ex.Message,
+                "ClosedEnv",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
             Shutdown();
         }
     }
@@ -56,7 +63,7 @@ public partial class App : Application
     private static string? ParseProfileId(string[] args)
     {
         var processName = Process.GetCurrentProcess().ProcessName;
-        if (string.Equals(processName, "ClosedEnv-Web", StringComparison.OrdinalIgnoreCase))
+        if (processName.StartsWith("ClosedEnv-Web", StringComparison.OrdinalIgnoreCase))
         {
             return "max-web";
         }
