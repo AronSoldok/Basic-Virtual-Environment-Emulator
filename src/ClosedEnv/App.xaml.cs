@@ -10,6 +10,7 @@ public partial class App : Application
     {
         AppPaths.EnsureLayout();
         AppPaths.SyncScripts();
+        ThemeService.Load();
 
         var profileId = ParseProfileId(e.Args);
         if (profileId is null)

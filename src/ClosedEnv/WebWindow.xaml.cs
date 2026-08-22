@@ -4,6 +4,8 @@ using System.IO;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
 using ClosedEnv.Models;
 using ClosedEnv.Services;
 using Microsoft.Web.WebView2.Core;
@@ -21,7 +23,10 @@ public partial class WebWindow : Window
     private readonly List<RequestLogEntry> _all = new();
     private readonly ObservableCollection<RequestLogEntry> _visible = new();
     private bool _logVisible = true;
+    private bool _layoutReady;
+    private string _dock = "bottom";
     private int _blocked;
+    private readonly HashSet<string> _blockedHosts = new(StringComparer.OrdinalIgnoreCase);
 
     public WebWindow(AppProfile profile, bool allowCamera, bool allowMicrophone)
     {
@@ -30,6 +35,11 @@ public partial class WebWindow : Window
         _allowMicrophone = allowMicrophone;
         InitializeComponent();
         LogList.ItemsSource = _visible;
+        BindThemeButton();
+        ThemeService.Changed += BindThemeButton;
+        Closed += (_, _) => ThemeService.Changed -= BindThemeButton;
+        ApplyLayout();
+        _layoutReady = true;
         Loaded += OnLoaded;
     }
 
@@ -88,8 +98,7 @@ public partial class WebWindow : Window
         }
         else
         {
-            _blocked++;
-            UpdateHeaderStatus();
+            NoteBlocked(uri?.Host);
         }
     }
 
@@ -117,6 +126,10 @@ public partial class WebWindow : Window
         }
 
         _blocked++;
+        if (!string.IsNullOrWhiteSpace(uri.Host))
+        {
+            _blockedHosts.Add(uri.Host);
+        }
         UpdateHeaderStatus();
         e.Response = Browser.CoreWebView2.Environment.CreateWebResourceResponse(
             null, 403, "Blocked", "Content-Type: text/plain");
@@ -276,11 +289,104 @@ public partial class WebWindow : Window
     private void ToggleLog_Click(object sender, RoutedEventArgs e)
     {
         _logVisible = !_logVisible;
-        LogRow.Height = _logVisible ? new GridLength(260) : new GridLength(0);
-        LogRow.MinHeight = _logVisible ? 120 : 0;
+        ApplyLayout();
+    }
+
+    private void DockChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (!_layoutReady)
+        {
+            return;
+        }
+
+        if (LogDock.SelectedItem is ComboBoxItem item && item.Tag is string tag)
+        {
+            _dock = tag;
+            ApplyLayout();
+        }
+    }
+
+    private void ApplyLayout()
+    {
+        WorkArea.RowDefinitions.Clear();
+        WorkArea.ColumnDefinitions.Clear();
+        Grid.SetRow(Browser, 0);
+        Grid.SetColumn(Browser, 0);
+        Grid.SetRow(LogSplitter, 0);
+        Grid.SetColumn(LogSplitter, 0);
+        Grid.SetRow(LogPanel, 0);
+        Grid.SetColumn(LogPanel, 0);
+
         LogSplitter.Visibility = _logVisible ? Visibility.Visible : Visibility.Collapsed;
         LogPanel.Visibility = _logVisible ? Visibility.Visible : Visibility.Collapsed;
         ToggleLogButton.Content = _logVisible ? "Скрыть журнал" : "Журнал";
+
+        if (_dock == "right")
+        {
+            WorkArea.ColumnDefinitions.Add(new ColumnDefinition
+            {
+                Width = new GridLength(1, GridUnitType.Star),
+                MinWidth = 200
+            });
+            WorkArea.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            WorkArea.ColumnDefinitions.Add(new ColumnDefinition
+            {
+                Width = _logVisible ? new GridLength(360) : new GridLength(0),
+                MinWidth = _logVisible ? 220 : 0
+            });
+            Grid.SetColumn(Browser, 0);
+            Grid.SetColumn(LogSplitter, 1);
+            Grid.SetColumn(LogPanel, 2);
+            LogSplitter.Width = 6;
+            LogSplitter.Height = double.NaN;
+            LogSplitter.HorizontalAlignment = HorizontalAlignment.Stretch;
+            LogSplitter.VerticalAlignment = VerticalAlignment.Stretch;
+            LogSplitter.ResizeDirection = GridResizeDirection.Columns;
+            LogPanel.BorderThickness = new Thickness(1, 0, 0, 0);
+            return;
+        }
+
+        LogSplitter.Height = 6;
+        LogSplitter.Width = double.NaN;
+        LogSplitter.HorizontalAlignment = HorizontalAlignment.Stretch;
+        LogSplitter.VerticalAlignment = VerticalAlignment.Stretch;
+        LogSplitter.ResizeDirection = GridResizeDirection.Rows;
+
+        if (_dock == "top")
+        {
+            WorkArea.RowDefinitions.Add(new RowDefinition
+            {
+                Height = _logVisible ? new GridLength(260) : new GridLength(0),
+                MinHeight = _logVisible ? 120 : 0
+            });
+            WorkArea.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            WorkArea.RowDefinitions.Add(new RowDefinition
+            {
+                Height = new GridLength(1, GridUnitType.Star),
+                MinHeight = 160
+            });
+            Grid.SetRow(LogPanel, 0);
+            Grid.SetRow(LogSplitter, 1);
+            Grid.SetRow(Browser, 2);
+            LogPanel.BorderThickness = new Thickness(0, 0, 0, 1);
+            return;
+        }
+
+        WorkArea.RowDefinitions.Add(new RowDefinition
+        {
+            Height = new GridLength(1, GridUnitType.Star),
+            MinHeight = 160
+        });
+        WorkArea.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        WorkArea.RowDefinitions.Add(new RowDefinition
+        {
+            Height = _logVisible ? new GridLength(260) : new GridLength(0),
+            MinHeight = _logVisible ? 120 : 0
+        });
+        Grid.SetRow(Browser, 0);
+        Grid.SetRow(LogSplitter, 1);
+        Grid.SetRow(LogPanel, 2);
+        LogPanel.BorderThickness = new Thickness(0, 1, 0, 0);
     }
 
     private void ClearLog_Click(object sender, RoutedEventArgs e)
@@ -288,6 +394,7 @@ public partial class WebWindow : Window
         _all.Clear();
         _visible.Clear();
         _blocked = 0;
+        _blockedHosts.Clear();
         DetailBox.Text = "Журнал очищен. Новые запросы появятся здесь.";
         try
         {
@@ -378,9 +485,23 @@ public partial class WebWindow : Window
     {
         void Apply()
         {
-            FilterStatus.Text = _blocked == 0
-                ? "фильтр доменов включён · кадры WebSocket после рукопожатия часто не видны"
-                : "отклонено: " + _blocked + " · кадры WebSocket после рукопожатия часто не видны";
+            if (_blocked == 0 || _blockedHosts.Count == 0)
+            {
+                FilterStatus.Text = _blocked == 0
+                    ? "фильтр доменов включён · кадры WebSocket после рукопожатия часто не видны"
+                    : "отрезано: " + _blocked;
+                return;
+            }
+
+            var hosts = _blockedHosts.OrderBy(h => h, StringComparer.OrdinalIgnoreCase).Take(4).ToList();
+            var extra = _blockedHosts.Count - hosts.Count;
+            var list = string.Join(", ", hosts);
+            if (extra > 0)
+            {
+                list += "…";
+            }
+
+            FilterStatus.Text = "отрезано: " + list;
         }
 
         if (!Dispatcher.CheckAccess())
@@ -391,5 +512,54 @@ public partial class WebWindow : Window
         {
             Apply();
         }
+    }
+
+    private void NoteBlocked(string? host)
+    {
+        _blocked++;
+        if (!string.IsNullOrWhiteSpace(host))
+        {
+            _blockedHosts.Add(host);
+        }
+
+        UpdateHeaderStatus();
+    }
+
+    private void BindThemeButton()
+    {
+        ThemeToggleButton.Content = ThemeService.ToggleLabel;
+    }
+
+    private void ThemeToggle_Click(object sender, RoutedEventArgs e) => ThemeService.Toggle();
+
+    private void LogPanel_OnPreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        var viewer = FindScrollViewer(LogList);
+        if (viewer is null)
+        {
+            return;
+        }
+
+        viewer.ScrollToVerticalOffset(viewer.VerticalOffset - e.Delta / 3.0);
+        e.Handled = true;
+    }
+
+    private static ScrollViewer? FindScrollViewer(DependencyObject root)
+    {
+        if (root is ScrollViewer viewer)
+        {
+            return viewer;
+        }
+
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+        {
+            var found = FindScrollViewer(VisualTreeHelper.GetChild(root, i));
+            if (found is not null)
+            {
+                return found;
+            }
+        }
+
+        return null;
     }
 }

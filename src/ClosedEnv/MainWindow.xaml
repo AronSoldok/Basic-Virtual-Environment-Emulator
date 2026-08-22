@@ -22,8 +22,12 @@
         <TextBlock Style="{StaticResource MutedText}" Margin="0,4,0,0"
                    Text="Безопасный режим для недоверенных Windows-программ"/>
       </StackPanel>
-      <Button Grid.Column="1" x:Name="EnableSandboxButton" Style="{StaticResource GhostButton}"
-              VerticalAlignment="Top" Content="Включить Sandbox" Click="EnableSandbox_Click"/>
+      <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
+        <Button x:Name="ThemeToggleButton" Style="{StaticResource GhostButton}"
+                Content="Светлая" Click="ThemeToggle_Click" Margin="0,0,8,0"/>
+        <Button x:Name="EnableSandboxButton" Style="{StaticResource GhostButton}"
+                Content="Включить Sandbox" Click="EnableSandbox_Click"/>
+      </StackPanel>
     </Grid>
 
     <Grid Grid.Row="1">
@@ -44,8 +48,8 @@
         </ListBox.ItemTemplate>
       </ListBox>
 
-      <Border Grid.Column="2" Background="{StaticResource SurfaceBrush}" CornerRadius="14" Padding="22"
-              BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+      <Border Grid.Column="2" Background="{DynamicResource SurfaceBrush}" CornerRadius="14" Padding="22"
+              BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
         <Grid>
           <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -56,7 +60,7 @@
           <StackPanel>
             <TextBlock x:Name="ProfileTitle" FontSize="22" FontWeight="SemiBold" Text="Профиль"/>
             <TextBlock x:Name="ProfileDescription" Style="{StaticResource MutedText}" Margin="0,8,0,0"/>
-            <Border Background="#1A2430" CornerRadius="8" Padding="12" Margin="0,14,0,0">
+            <Border Background="{DynamicResource SurfaceAltBrush}" CornerRadius="8" Padding="12" Margin="0,14,0,0">
               <TextBlock x:Name="HonestyNote" Style="{StaticResource MutedText}" FontSize="12"
                          Text="MAX остаётся обычным мессенджером и ходит в свою сеть. Изоляция закрывает файлы и устройства этого компьютера."/>
             </Border>

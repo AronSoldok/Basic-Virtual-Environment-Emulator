@@ -18,9 +18,19 @@ public partial class MainWindow : Window
         InitializeComponent();
         AppPaths.EnsureLayout();
         AppPaths.SyncScripts();
+        BindThemeButton();
+        ThemeService.Changed += BindThemeButton;
+        Closed += (_, _) => ThemeService.Changed -= BindThemeButton;
         LoadProfiles();
         RefreshSandboxStatus();
     }
+
+    private void BindThemeButton()
+    {
+        ThemeToggleButton.Content = ThemeService.ToggleLabel;
+    }
+
+    private void ThemeToggle_Click(object sender, RoutedEventArgs e) => ThemeService.Toggle();
 
     private void LoadProfiles()
     {
