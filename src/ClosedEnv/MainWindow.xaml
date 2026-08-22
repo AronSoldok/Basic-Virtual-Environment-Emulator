@@ -69,6 +69,14 @@
             <CheckBox x:Name="CameraToggle" Content="Камера"/>
             <CheckBox x:Name="FirewallToggle" Content="Гостевой файрвол (только домены профиля)"/>
 
+            <StackPanel x:Name="SandboxLogPanel" Margin="0,16,0,0" Visibility="Collapsed">
+              <TextBlock Text="Журнал песочницы" FontWeight="SemiBold" Margin="0,0,0,8"/>
+              <TextBlock Style="{StaticResource MutedText}" FontSize="12" Margin="0,0,0,8"
+                         Text="Без расшифровки TLS: время, действие, домен или URL из гостевого лога."/>
+              <Button Style="{StaticResource GhostButton}" HorizontalAlignment="Left" Content="Открыть лог"
+                      Click="OpenGuestLog_Click"/>
+            </StackPanel>
+
             <StackPanel x:Name="PayloadPanel" Margin="0,16,0,0" Visibility="Collapsed">
               <TextBlock Text="Файл для песочницы" FontWeight="SemiBold" Margin="0,0,0,8"/>
               <DockPanel>

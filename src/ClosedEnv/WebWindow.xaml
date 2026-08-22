@@ -3,20 +3,115 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
         Title="ClosedEnv — MAX Web"
-        Height="800" Width="1100"
-        MinHeight="500" MinWidth="720"
+        Height="880" Width="1180"
+        MinHeight="520" MinWidth="780"
         WindowStartupLocation="CenterOwner">
+  <Window.Resources>
+    <Style TargetType="ListView">
+      <Setter Property="Background" Value="#0B0F14"/>
+      <Setter Property="BorderBrush" Value="#2A3646"/>
+      <Setter Property="Foreground" Value="#E7EEF6"/>
+      <Setter Property="FontSize" Value="12"/>
+    </Style>
+    <Style TargetType="ListViewItem">
+      <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+      <Setter Property="Padding" Value="0,2"/>
+    </Style>
+    <Style TargetType="TextBox">
+      <Setter Property="Background" Value="#1C2430"/>
+      <Setter Property="Foreground" Value="#E7EEF6"/>
+      <Setter Property="BorderBrush" Value="#2A3646"/>
+      <Setter Property="Padding" Value="8,6"/>
+      <Setter Property="CaretBrush" Value="#E7EEF6"/>
+    </Style>
+    <Style TargetType="ComboBox">
+      <Setter Property="Background" Value="#1C2430"/>
+      <Setter Property="Foreground" Value="#E7EEF6"/>
+      <Setter Property="BorderBrush" Value="#2A3646"/>
+      <Setter Property="Padding" Value="8,4"/>
+    </Style>
+    <Style TargetType="GridViewColumnHeader">
+      <Setter Property="Background" Value="#151B23"/>
+      <Setter Property="Foreground" Value="#8B9BB0"/>
+      <Setter Property="Padding" Value="8,6"/>
+      <Setter Property="BorderBrush" Value="#2A3646"/>
+      <Setter Property="BorderThickness" Value="0,0,1,1"/>
+    </Style>
+  </Window.Resources>
   <Grid>
     <Grid.RowDefinitions>
       <RowDefinition Height="Auto"/>
-      <RowDefinition Height="*"/>
+      <RowDefinition Height="*" MinHeight="160"/>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition x:Name="LogRow" Height="260" MinHeight="0"/>
     </Grid.RowDefinitions>
+
     <Border Background="#151B23" Padding="12,10" BorderBrush="#2A3646" BorderThickness="0,0,0,1">
       <DockPanel>
-        <TextBlock x:Name="FilterStatus" DockPanel.Dock="Right" Foreground="#8B9BB0" FontSize="12" VerticalAlignment="Center"/>
+        <Button x:Name="ToggleLogButton" DockPanel.Dock="Right" Style="{StaticResource GhostButton}"
+                Content="Скрыть журнал" Click="ToggleLog_Click" Margin="12,0,0,0"/>
+        <TextBlock x:Name="FilterStatus" DockPanel.Dock="Right" Foreground="#8B9BB0" FontSize="12"
+                   VerticalAlignment="Center" Text="фильтр доменов включён"/>
         <TextBlock Text="Изолированная сессия web.max.ru" Foreground="#E7EEF6" FontWeight="SemiBold"/>
       </DockPanel>
     </Border>
+
     <wv2:WebView2 Grid.Row="1" x:Name="Browser"/>
+
+    <GridSplitter x:Name="LogSplitter" Grid.Row="2" Height="6" HorizontalAlignment="Stretch"
+                  Background="#2A3646" ResizeDirection="Rows"/>
+
+    <Border x:Name="LogPanel" Grid.Row="3" Background="#151B23" BorderBrush="#2A3646" BorderThickness="0,1,0,0">
+      <Grid>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition Height="*" MinHeight="80"/>
+          <RowDefinition Height="120"/>
+        </Grid.RowDefinitions>
+
+        <Grid Margin="10,8,10,6">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="160"/>
+            <ColumnDefinition Width="12"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="12"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="8"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="8"/>
+            <ColumnDefinition Width="Auto"/>
+          </Grid.ColumnDefinitions>
+          <TextBlock Text="Фильтр" Foreground="#8B9BB0" VerticalAlignment="Center" Margin="0,0,8,0"/>
+          <ComboBox x:Name="KindFilter" Grid.Column="1" SelectionChanged="FilterChanged">
+            <ComboBoxItem Content="Все" Tag="all" IsSelected="True"/>
+            <ComboBoxItem Content="Пропущенные" Tag="allow"/>
+            <ComboBoxItem Content="Отрезанные" Tag="block"/>
+          </ComboBox>
+          <TextBox x:Name="SearchBox" Grid.Column="3" TextChanged="SearchChanged"
+                   ToolTip="Поиск по URL, хосту, методу, телу"/>
+          <TextBlock x:Name="CountText" Grid.Column="5" Foreground="#8B9BB0" VerticalAlignment="Center"/>
+          <Button Grid.Column="7" Style="{StaticResource GhostButton}" Content="Очистить" Click="ClearLog_Click"/>
+          <Button Grid.Column="9" Style="{StaticResource GhostButton}" Content="Файл лога" Click="OpenLogFile_Click"/>
+        </Grid>
+
+        <ListView x:Name="LogList" Grid.Row="1" Margin="10,0,10,6"
+                  SelectionChanged="LogList_OnSelectionChanged">
+          <ListView.View>
+            <GridView>
+              <GridViewColumn Header="Время" Width="96" DisplayMemberBinding="{Binding TimeText}"/>
+              <GridViewColumn Header="Метод" Width="72" DisplayMemberBinding="{Binding Method}"/>
+              <GridViewColumn Header="Статус" Width="92" DisplayMemberBinding="{Binding StatusText}"/>
+              <GridViewColumn Header="Хост" Width="180" DisplayMemberBinding="{Binding Host}"/>
+              <GridViewColumn Header="URL" Width="520" DisplayMemberBinding="{Binding ShortUrl}"/>
+            </GridView>
+          </ListView.View>
+        </ListView>
+
+        <TextBox x:Name="DetailBox" Grid.Row="2" Margin="10,0,10,10" IsReadOnly="True"
+                 TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" FontFamily="Consolas"
+                 Text="Кликните запись. WebSocket-кадры после рукопожатия WebView обычно не показывает."/>
+      </Grid>
+    </Border>
   </Grid>
 </Window>

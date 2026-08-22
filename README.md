@@ -73,6 +73,7 @@ powershell -ExecutionPolicy Bypass -File scripts\enable-windows-sandbox.ps1
 - По умолчанию выключены буфер обмена, принтер и камера. `ProtectedClient` включён. UNC-пути в mapped folders запрещены.
 - **MAX Official:** гостевой файрвол оставляет публичные домены мессенджера (`max.ru`, `oneme.ru`, `download.max.ru` и соседние хосты из профиля). Это правила файрвола, не разбор TLS.
 - **MAX Web:** WebView2 с отдельной папкой сессии и allowlist хостов. Камера и микрофон — только если вы их включили в лаунчере.
+- **Журнал запросов:** в веб-окне снизу (кнопка «Журнал», фильтр, поиск). Пишется также в `%LOCALAPPDATA%\ClosedEnv\profiles\max-web\requests.jsonl`. В песочнице — `guest.log` (время и домены, без расшифровки TLS).
 - Вход в веб-MAX по QR — ограничение самого сервиса, не бага ClosedEnv.
 
 Сессия Windows Sandbox одноразовая. Логин живёт в mapped `data\` (установка + junction типичных папок AppData).

@@ -4,8 +4,11 @@ $LogPath = Join-Path $DataRoot "guest.log"
 $SessionPath = Join-Path $DataRoot "session.json"
 
 function Write-Log {
-    param([string]$Message)
-    $line = "{0:o} {1}" -f (Get-Date), $Message
+    param(
+        [Parameter(Mandatory = $true)][string]$Action,
+        [string]$Detail = ""
+    )
+    $line = "{0:o}`t{1}`t{2}" -f (Get-Date), $Action, $Detail
     try { Add-Content -Path $LogPath -Value $line -Encoding UTF8 } catch {}
 }
 
@@ -35,7 +38,7 @@ function Get-HostAddressesSafe {
                 if ($null -ne $entry) { [void]$ips.Add($entry.ToString()) }
             }
         } catch {
-            Write-Log "DNS failed for $Name : $($_.Exception.Message)"
+            Write-Log -Action dns -Detail "fail $Name $($_.Exception.Message)"
         }
     }
     return $ips
@@ -43,7 +46,7 @@ function Get-HostAddressesSafe {
 
 function Enable-GuestFirewall {
     param([string[]]$Domains)
-    Write-Log "Applying guest firewall allowlist"
+    Write-Log -Action firewall -Detail "apply allowlist"
     netsh advfirewall firewall add rule name="ClosedEnv DNS UDP" dir=out action=allow protocol=UDP remoteport=53 | Out-Null
     netsh advfirewall firewall add rule name="ClosedEnv DNS TCP" dir=out action=allow protocol=TCP remoteport=53 | Out-Null
     netsh advfirewall firewall add rule name="ClosedEnv DHCP" dir=out action=allow protocol=UDP remoteport=67 | Out-Null
@@ -54,7 +57,7 @@ function Enable-GuestFirewall {
         if ([string]::IsNullOrWhiteSpace($clean)) { continue }
         foreach ($ip in (Get-HostAddressesSafe -Name $clean)) {
             netsh advfirewall firewall add rule name="ClosedEnv $clean $ip" dir=out action=allow remoteip=$ip | Out-Null
-            Write-Log "Allow $clean -> $ip"
+            Write-Log -Action allow-ip -Detail "$clean $ip"
         }
     }
 }
@@ -71,7 +74,7 @@ function Ensure-Junction {
     $parent = Split-Path $Link -Parent
     if ($parent) { New-Item -ItemType Directory -Force -Path $parent | Out-Null }
     cmd /c "mklink /J `"$Link`" `"$Target`"" | Out-Null
-    Write-Log "Junction $Link -> $Target"
+    Write-Log -Action junction -Detail "$Link -> $Target"
 }
 
 function Find-AppExe {
@@ -92,10 +95,10 @@ function Find-AppExe {
 }
 
 New-Item -ItemType Directory -Force -Path $DataRoot | Out-Null
-Write-Log "guest-setup start"
+Write-Log -Action start -Detail "guest-setup"
 
 if (-not (Test-Path $SessionPath)) {
-    Write-Log "session.json missing"
+    Write-Log -Action error -Detail "session.json missing"
     Start-Process explorer.exe $DataRoot
     exit 1
 }
@@ -125,11 +128,11 @@ if ($mode -eq "generic") {
         $payload = Get-ChildItem -Path $payloadDir -File -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
     }
     if ($payload -and (Test-Path $payload)) {
-        Write-Log "Launch payload $payload"
+        Write-Log -Action launch -Detail $payload
         Start-Process -FilePath $payload
         exit 0
     }
-    Write-Log "payload missing"
+    Write-Log -Action error -Detail "payload missing"
     Start-Process explorer.exe $DataRoot
     exit 1
 }
@@ -139,7 +142,7 @@ $exe = Find-AppExe -Root $installRoot -PreferredName ([string]$session.launchRel
 if (-not $exe) {
     $pf = "C:\Program Files\MAX"
     if (Test-Path $pf) {
-        Write-Log "Copying Program Files\MAX into persist folder"
+        Write-Log -Action copy -Detail "Program Files\MAX -> persist"
         Copy-Item -Path $pf -Destination $installRoot -Recurse -Force
         $exe = Find-AppExe -Root $installRoot -PreferredName ([string]$session.launchRelativePath)
     }
@@ -153,19 +156,19 @@ if (-not $exe) {
     $installer = Join-Path $cacheDir $installerName
     $url = [string]$session.downloadUrl
     if (-not (Test-Path $installer) -and -not [string]::IsNullOrWhiteSpace($url)) {
-        Write-Log "Downloading $url"
+        Write-Log -Action download -Detail $url
         try {
             Invoke-WebRequest -Uri $url -OutFile $installer -UseBasicParsing
-            Write-Log "Download complete"
+            Write-Log -Action download -Detail "complete $url"
         } catch {
-            Write-Log "Download failed: $($_.Exception.Message)"
+            Write-Log -Action download -Detail "fail $url $($_.Exception.Message)"
         }
     }
     if (Test-Path $installer) {
-        Write-Log "Installing $installer to $installRoot"
+        Write-Log -Action install -Detail $installer
         $args = "/i `"$installer`" /qn /norestart INSTALL_ROOT=`"$installRoot`""
         $p = Start-Process -FilePath "msiexec.exe" -ArgumentList $args -Wait -PassThru
-        Write-Log "msiexec exit $($p.ExitCode)"
+        Write-Log -Action install -Detail "msiexec $($p.ExitCode)"
         if (Test-Path "C:\Program Files\MAX") {
             Copy-Item -Path "C:\Program Files\MAX" -Destination $installRoot -Recurse -Force
         }
@@ -177,11 +180,11 @@ if (-not $exe) {
 }
 
 if ($exe -and (Test-Path $exe)) {
-    Write-Log "Launch $exe"
+    Write-Log -Action launch -Detail $exe
     Start-Process -FilePath $exe
     exit 0
 }
 
-Write-Log "Application not found, opening data folder"
+Write-Log -Action error -Detail "application not found"
 Start-Process explorer.exe $DataRoot
 exit 1

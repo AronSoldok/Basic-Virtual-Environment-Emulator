@@ -19,6 +19,12 @@ public static class AppPaths
     public static string WebViewData(string profileId) =>
         Path.Combine(Root, "profiles", Sanitize(profileId), "webview");
 
+    public static string RequestLog(string profileId) =>
+        Path.Combine(Root, "profiles", Sanitize(profileId), "requests.jsonl");
+
+    public static string GuestLog(string profileId) =>
+        Path.Combine(ProfileData(profileId), "guest.log");
+
     public static string WsbFile(string profileId) =>
         Path.Combine(Generated, Sanitize(profileId) + ".wsb");
 

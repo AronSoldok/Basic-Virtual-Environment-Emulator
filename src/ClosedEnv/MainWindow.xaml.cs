@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using ClosedEnv.Models;
@@ -60,6 +62,7 @@ public partial class MainWindow : Window
             ? Visibility.Visible
             : Visibility.Collapsed;
         PayloadPanel.Visibility = profile.RequiresPayload ? Visibility.Visible : Visibility.Collapsed;
+        SandboxLogPanel.Visibility = profile.IsWeb ? Visibility.Collapsed : Visibility.Visible;
         DataPathText.Text = profile.IsWeb
             ? AppPaths.WebViewData(profile.Id)
             : AppPaths.ProfileData(profile.Id);
@@ -68,6 +71,36 @@ public partial class MainWindow : Window
             ? "MAX остаётся обычным мессенджером и ходит в свою сеть. Изоляция закрывает файлы и устройства этого компьютера."
             : "Программа увидит только каталог данных профиля. Документы, рабочий стол и загрузки хоста не монтируются.";
         RefreshSandboxStatus();
+    }
+
+    private void OpenGuestLog_Click(object sender, RoutedEventArgs e)
+    {
+        var profile = SelectedProfile;
+        if (profile is null || profile.IsWeb)
+        {
+            return;
+        }
+
+        var path = AppPaths.GuestLog(profile.Id);
+        try
+        {
+            if (!File.Exists(path))
+            {
+                MessageBox.Show(
+                    this,
+                    "Лога ещё нет. Запустите профиль в песочнице, затем откройте снова.",
+                    "ClosedEnv",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+                return;
+            }
+
+            Process.Start(new ProcessStartInfo { FileName = path, UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, ex.Message, "ClosedEnv", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
     }
 
     private void BrowsePayload_Click(object sender, RoutedEventArgs e)
