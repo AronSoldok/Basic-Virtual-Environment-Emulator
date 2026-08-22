@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>ClosedEnv</RootNamespace>
+    <AssemblyName>ClosedEnv</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationTitle>ClosedEnv</ApplicationTitle>
+    <Product>ClosedEnv</Product>
+    <Company>ClosedEnv Contributors</Company>
+    <Copyright>Copyright 2026 ClosedEnv Contributors</Copyright>
+    <Version>1.0.0</Version>
+    <NeutralLanguage>ru-RU</NeutralLanguage>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2849.39" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\..\profiles\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>profiles\%(Filename)%(Extension)</Link>
+    </Content>
+    <EmbeddedResource Include="..\..\profiles\*.json">
+      <LogicalName>ClosedEnv.Profiles.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+    <Content Include="..\..\scripts\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>scripts\%(Filename)%(Extension)</Link>
+    </Content>
+  </ItemGroup>
+</Project>

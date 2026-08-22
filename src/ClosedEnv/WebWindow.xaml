@@ -1,0 +1,22 @@
+<Window x:Class="ClosedEnv.WebWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+        Title="ClosedEnv — MAX Web"
+        Height="800" Width="1100"
+        MinHeight="500" MinWidth="720"
+        WindowStartupLocation="CenterOwner">
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+    </Grid.RowDefinitions>
+    <Border Background="#151B23" Padding="12,10" BorderBrush="#2A3646" BorderThickness="0,0,0,1">
+      <DockPanel>
+        <TextBlock x:Name="FilterStatus" DockPanel.Dock="Right" Foreground="#8B9BB0" FontSize="12" VerticalAlignment="Center"/>
+        <TextBlock Text="Изолированная сессия web.max.ru" Foreground="#E7EEF6" FontWeight="SemiBold"/>
+      </DockPanel>
+    </Border>
+    <wv2:WebView2 Grid.Row="1" x:Name="Browser"/>
+  </Grid>
+</Window>

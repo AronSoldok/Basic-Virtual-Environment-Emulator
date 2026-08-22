@@ -1,0 +1,30 @@
+{
+  "id": "max-official",
+  "name": "MAX Official",
+  "kind": "sandbox",
+  "description": "Официальный клиент MAX внутри Windows Sandbox. На хост не ставится. Монтируется только каталог данных профиля.",
+  "audioInput": true,
+  "videoInput": false,
+  "clipboard": false,
+  "networking": true,
+  "protectedClient": true,
+  "guestFirewall": true,
+  "memoryMb": 4096,
+  "requiresPayload": false,
+  "downloadUrl": "https://download.max.ru/win/release/26.28.2/MAX.msi",
+  "installerFileName": "MAX.msi",
+  "launchRelativePath": "MAX.exe",
+  "persistFolders": ["MAX", "Communication Platform", "CommunicationPlatform"],
+  "allowlist": [
+    "max.ru",
+    "www.max.ru",
+    "web.max.ru",
+    "download.max.ru",
+    "id.max.ru",
+    "platform-api.max.ru",
+    "oneme.ru",
+    "api.oneme.ru",
+    "ws-api.oneme.ru",
+    "id.oneme.ru"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "id": "generic",
+  "name": "Generic",
+  "kind": "sandbox",
+  "description": "Запуск произвольного .exe или установщика в песочнице. Файл копируется в каталог профиля — буфер обмена хоста не используется.",
+  "audioInput": false,
+  "videoInput": false,
+  "clipboard": false,
+  "networking": true,
+  "protectedClient": true,
+  "guestFirewall": false,
+  "memoryMb": 4096,
+  "requiresPayload": true,
+  "allowlist": [],
+  "persistFolders": []
+}
